@@ -1,27 +1,34 @@
 var bigInt = require("big-integer");
+
+let memo = {
+    0: bigInt.zero,
+    1: bigInt.one
+};
+
 module.exports = async function (context, req) {
-    context.log('JavaScript HTTP trigger function processed a request.');
+    context.log('JavaScript HTTP trigger function processed a request with Memoization.');
 
-    let nth = req.body.nth
-    let nth_1 = bigInt.one;
-    let nth_2 = bigInt.zero;
-    let answer = bigInt.zero;
+    const nth = req.body.nth;
 
-    if (nth < 0)
-        throw 'must be greater than 0'
-    else if (nth === 0)
-        answer = nth_2
-    else if (nth === 1)
-        answer = nth_1
-    else {
-        for (var i = 0; i < nth - 1; i++) {
-            answer = nth_2.add(nth_1)
-            nth_2 = nth_1
-            nth_1 = answer
-        }
+    if (nth === undefined || nth < 0) {
+        context.res = {
+            status: 400,
+            body: "Please pass a non-negative number 'nth' in the request body."
+        };
+        return;
     }
+
+    function fibRecursive(n) {
+        if (n in memo) {
+            return memo[n];
+        }
+        memo[n] = fibRecursive(n - 1).add(fibRecursive(n - 2));
+        return memo[n];
+    }
+
+    const answer = fibRecursive(nth);
 
     context.res = {
         body: answer.toString()
     };
-}
+};
